@@ -50,18 +50,18 @@ public class Warehouse {
             JsonObject _staging_area = (JsonObject) json.get("staging_area");
             this.staging_area = new StagingArea( ((BigDecimal) _staging_area.get("starting_capacity")).intValueExact());
 
+            JsonArray sections_arr = (JsonArray) json.get("sections");
+            for (Object section : sections_arr) {
+                JsonObject sec = (JsonObject) section;
+                sections.add(new Section((String) sec.get("name")));
+            }
+
             this.name = (String) json.get("name");
             int no_stockers = ((BigDecimal) json.get("stockers")).intValueExact();
             for(int i = 0; i < no_stockers; i++) {
                 Stocker s = new Stocker();
                 stockers.add(s);
             };
-
-            JsonArray sections_arr = (JsonArray) json.get("sections");
-            for (Object section : sections_arr) {
-                JsonObject sec = (JsonObject) section;
-                sections.add(new Section((String) sec.get("name")));
-            }
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to load config", e);
