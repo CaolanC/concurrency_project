@@ -1,18 +1,20 @@
 {
     "name": "Alpha",
     "boxes_per_delivery": 10,
-    "deliver_per_tick_probability": 0.01,
+    "delivery_per_tick_probability": 0.01,
     "tick_per_day": 1000,
     "stocker_box_capacity": 10,
     "stockers": 3,
     "sections": [
         {
             "name": "medicines",
-            "capacity": 50
+            "capacity": 50,
+            "starting_capacity": 5
         },
         {
-            "name": "electricity",
-            "capacity": 50
+            "name": "electronics",
+            "capacity": 50,
+            "starting_capacity": 5
         }
     ],
     "staging_area": {
