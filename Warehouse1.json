@@ -5,15 +5,14 @@
     "tick_per_day": 1000,
     "stocker_box_capacity": 10,
     "stockers": 3,
-    "sections": {
-        "medicines": {
+    "sections": [
+        {
+            "name": "medicines",
             "capacity": 50
         },
-        "books": {
-            "capacity": 50
-        },
-        "electronics": {
+        {
+            "name": "electricity",
             "capacity": 50
         }
-    }
+    ]
 }

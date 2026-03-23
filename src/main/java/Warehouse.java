@@ -1,6 +1,7 @@
 package whorchestrator;
 
 import whorchestrator.StagingArea;
+import whorchestrator.Section;
 import java.util.ArrayList;
 import java.util.List;
 import com.github.cliftonlabs.json_simple.JsonArray;
@@ -16,6 +17,7 @@ class Stocker extends Thread {
 
     static AtomicInteger next_id = new AtomicInteger(0);
     private final int id;
+
     public void run() {
         System.out.println(String.format("Stocker ID: %d started.", id));
     }
@@ -41,12 +43,18 @@ public class Warehouse {
 
     private void ProcessConfig(String path) {
         try (FileReader reader = new FileReader(path)) {
-            JsonObject obj = (JsonObject) Jsoner.deserialize(reader);
-            int no_stockers = ((BigDecimal) obj.get("stockers")).intValueExact();
+            JsonObject json = (JsonObject) Jsoner.deserialize(reader);
+            int no_stockers = ((BigDecimal) json.get("stockers")).intValueExact();
             for(int i = 0; i < no_stockers; i++) {
                 Stocker s = new Stocker();
                 stockers.add(s);
             };
+
+            JsonArray sections_arr = (JsonArray) json.get("sections");
+            for (Object section : sections_arr) {
+                JsonObject sec = (JsonObject) section;
+                new Section((String) sec.get("name"));
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to load config", e);
         }
