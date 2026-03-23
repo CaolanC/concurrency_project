@@ -5,6 +5,6 @@ public class Section {
 
     Section(String name) {
         this.name = name;
-        System.out.println(String.format("Section %s created.", this.name));
+        System.out.println(String.format("Section: %s created.", this.name));
     }
 }

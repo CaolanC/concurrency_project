@@ -31,19 +31,26 @@ class Stocker extends Thread {
 public class Warehouse {
 
     StagingArea staging_area;
-    List<String> sections;
+    List<Section> sections;
     List<Stocker> stockers;
+    String name;
 
     private Warehouse(String configuration_path) {
         System.out.println("Creating warehouse.");
-        sections = new ArrayList<String>();
+        sections = new ArrayList<Section>();
         stockers = new ArrayList<Stocker>();
         ProcessConfig(configuration_path);
+        System.out.println(String.format("Warehouse: %s created.", this.name));
     }
 
     private void ProcessConfig(String path) {
         try (FileReader reader = new FileReader(path)) {
             JsonObject json = (JsonObject) Jsoner.deserialize(reader);
+
+            JsonObject _staging_area = (JsonObject) json.get("staging_area");
+            this.staging_area = new StagingArea( ((BigDecimal) _staging_area.get("starting_capacity")).intValueExact());
+
+            this.name = (String) json.get("name");
             int no_stockers = ((BigDecimal) json.get("stockers")).intValueExact();
             for(int i = 0; i < no_stockers; i++) {
                 Stocker s = new Stocker();
@@ -53,8 +60,9 @@ public class Warehouse {
             JsonArray sections_arr = (JsonArray) json.get("sections");
             for (Object section : sections_arr) {
                 JsonObject sec = (JsonObject) section;
-                new Section((String) sec.get("name"));
+                sections.add(new Section((String) sec.get("name")));
             }
+
         } catch (Exception e) {
             throw new RuntimeException("Failed to load config", e);
         }

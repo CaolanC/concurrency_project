@@ -1,5 +1,5 @@
 {
-    "name": "Warehouse Alpha",
+    "name": "Alpha",
     "boxes_per_delivery": 10,
     "deliver_per_tick_probability": 0.01,
     "tick_per_day": 1000,
@@ -14,5 +14,8 @@
             "name": "electricity",
             "capacity": 50
         }
-    ]
+    ],
+    "staging_area": {
+        "starting_capacity": 1000
+    }
 }
