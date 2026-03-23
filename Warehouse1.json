@@ -8,11 +8,13 @@
     "sections": [
         {
             "name": "medicines",
-            "capacity": 50
+            "capacity": 50,
+            "starting_capacity": 5
         },
         {
             "name": "electronics",
-            "capacity": 50
+            "capacity": 50,
+            "starting_capacity": 5
         }
     ],
     "staging_area": {

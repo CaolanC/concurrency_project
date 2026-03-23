@@ -35,6 +35,13 @@ public class Warehouse {
     List<Stocker> stockers;
     String name;
 
+    public void start() {
+        for (Stocker stocker : stockers) {
+//             stocker.start(); // Not starting this yet as we need to clean up the threads when they die.
+        } // So either the CLI might have some delay, or this can continue running and warehouse started can print BEFORE the last stocker prints its start line. So might need to take a look at this later.
+        System.out.println(String.format("Warehouse %s started.", this.name));
+    }
+
     private Warehouse(String configuration_path) {
         System.out.println("Creating warehouse.");
         sections = new ArrayList<Section>();
@@ -66,7 +73,12 @@ public class Warehouse {
         JsonArray sections_arr = (JsonArray) json.get("sections");
         for (Object section : sections_arr) {
             JsonObject sec = (JsonObject) section;
-            sections.add(new Section((String) sec.get("name")));
+            sections.add(
+                new Section(
+                    (String) sec.get("name"),
+                    ((BigDecimal) sec.get("starting_capacity")).intValueExact()
+                )
+            );
         }
     }
 
