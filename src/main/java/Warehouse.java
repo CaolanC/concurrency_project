@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 
 class Stocker extends Thread {
 
-    static AtomicInteger next_id = new AtomicInteger(0);
+    private static AtomicInteger next_id = new AtomicInteger(0);
     private final int id;
 
     public void run() {
