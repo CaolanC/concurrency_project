@@ -1,0 +1,2 @@
+default:
+	./gradlew run

@@ -1,0 +1,19 @@
+{
+    "name": "Warehouse Alpha",
+    "boxes_per_delivery": 10,
+    "deliver_per_tick_probability": 0.01,
+    "tick_per_day": 1000,
+    "stocker_box_capacity": 10,
+    "stockers": 3,
+    "sections": {
+        "medicines": {
+            "capacity": 50
+        },
+        "books": {
+            "capacity": 50
+        },
+        "electronics": {
+            "capacity": 50
+        }
+    }
+}

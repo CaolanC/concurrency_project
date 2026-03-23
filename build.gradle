@@ -1,0 +1,16 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+application {
+    mainClass = 'WarehouseOrchestrator'
+}
+
+dependencies {
+    implementation 'com.github.cliftonlabs:json-simple:4.0.1'
+}
