@@ -2,6 +2,7 @@ package whorchestrator;
 
 import whorchestrator.StagingArea;
 import whorchestrator.Section;
+import whorchestrator.SimulationClock;
 import java.util.ArrayList;
 import java.util.List;
 import com.github.cliftonlabs.json_simple.JsonArray;
@@ -37,10 +38,11 @@ public class Warehouse {
     int boxes_per_delivery;
     double delivery_per_tick_probability;
     long tick_duration_ms;
+    SimulationClock simulationClock;
     DeliveryGenerator deliveryGenerator;
 
     public void start() {
-        // Start delivery flow first so stockers can consume from a live staging area.
+        simulationClock.start();
         deliveryGenerator.start();
         for (Stocker stocker : stockers) {
 //             stocker.start(); // Not starting this yet as we need to clean up the threads when they die.
@@ -109,12 +111,13 @@ public class Warehouse {
     }
 
     private void InitDeliveryGenerator() {
+        this.simulationClock = new SimulationClock(this.tick_duration_ms);
         this.deliveryGenerator = new DeliveryGenerator(
             this.staging_area,
             this.sections,
             this.boxes_per_delivery,
             this.delivery_per_tick_probability,
-            this.tick_duration_ms
+            this.simulationClock
         );
     }
 

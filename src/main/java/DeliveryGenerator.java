@@ -11,7 +11,7 @@ public class DeliveryGenerator extends Thread {
     private final List<Section> sections;
     private final int boxesPerDelivery;
     private final double deliveryPerTickProbability;
-    private final long tickDurationMs;
+    private final SimulationClock simulationClock;
     private final Random random;
 
     public DeliveryGenerator(
@@ -19,29 +19,26 @@ public class DeliveryGenerator extends Thread {
         List<Section> sections,
         int boxesPerDelivery,
         double deliveryPerTickProbability,
-        long tickDurationMs
+        SimulationClock simulationClock
     ) {
         this.stagingArea = stagingArea;
         this.sections = sections;
         this.boxesPerDelivery = boxesPerDelivery;
         this.deliveryPerTickProbability = deliveryPerTickProbability;
-        this.tickDurationMs = tickDurationMs;
+        this.simulationClock = simulationClock;
         this.random = new Random();
         setName("DeliveryGenerator");
     }
 
     @Override
     public void run() {
-        long tick = 0;
-        // One loop iteration represents one simulation tick.
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                Thread.sleep(tickDurationMs);
-                tick++;
+                simulationClock.sleepTicks(1);
                 // Probabilistic arrival: a delivery may or may not appear each tick.
                 if (random.nextDouble() < deliveryPerTickProbability) {
                     Map<String, Integer> delivery = generateDelivery();
-                    stagingArea.addDelivery(delivery, tick, "DEL");
+                    stagingArea.addDelivery(delivery, simulationClock.getCurrentTick(), "DEL");
                 }
             } catch (InterruptedException interruptedException) {
                 // Preserve interruption status so higher-level shutdown logic can stop cleanly.
