@@ -53,8 +53,8 @@ public class Warehouse {
             JsonObject json = (JsonObject) Jsoner.deserialize(reader);
             this.name = (String) json.get("name");
 
-            InitStagingArea(json);
             InitSections(json);
+            InitStagingArea(json);
             InitDeliveryConfig(json);
             InitStockers(json);
             InitDeliveryGenerator();
@@ -66,7 +66,7 @@ public class Warehouse {
 
     private void InitStagingArea(JsonObject json) {
         JsonObject _staging_area = (JsonObject) json.get("staging_area");
-        this.staging_area = new StagingArea( ((BigDecimal) _staging_area.get("starting_capacity")).intValueExact());
+        this.staging_area = new StagingArea( ((BigDecimal) _staging_area.get("starting_capacity")).intValueExact(), section_names);
     }
 
     private void InitSections(JsonObject json) {
