@@ -7,6 +7,7 @@
     "stocker_box_capacity": 10,
     "stocker_selection_strategy": "random_selection",
     "stockers": 3,
+    "pickers": 5,
     "sections": [
         {
             "name": "electronics",
