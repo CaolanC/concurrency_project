@@ -2,6 +2,7 @@ package whorchestrator;
 
 import whorchestrator.StagingArea;
 import whorchestrator.Section;
+import whorchestrator.SimulationClock;
 import java.util.ArrayList;
 import java.util.List;
 import com.github.cliftonlabs.json_simple.JsonArray;
@@ -34,8 +35,15 @@ public class Warehouse {
     List<Section> sections;
     List<Stocker> stockers;
     String name;
+    int boxes_per_delivery;
+    double delivery_per_tick_probability;
+    long tick_duration_ms;
+    SimulationClock simulationClock;
+    DeliveryGenerator deliveryGenerator;
 
     public void start() {
+        simulationClock.start();
+        deliveryGenerator.start();
         for (Stocker stocker : stockers) {
 //             stocker.start(); // Not starting this yet as we need to clean up the threads when they die.
         } // So either the CLI might have some delay, or this can continue running and warehouse started can print BEFORE the last stocker prints its start line. So might need to take a look at this later.
@@ -57,7 +65,9 @@ public class Warehouse {
 
             InitStagingArea(json);
             InitSections(json);
+            InitDeliveryConfig(json);
             InitStockers(json);
+            InitDeliveryGenerator();
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to load config", e);
@@ -88,6 +98,27 @@ public class Warehouse {
             Stocker s = new Stocker();
             stockers.add(s);
         };
+    }
+
+    private void InitDeliveryConfig(JsonObject json) {
+        this.boxes_per_delivery = ((BigDecimal) json.get("boxes_per_delivery")).intValueExact();
+        this.delivery_per_tick_probability = ((BigDecimal) json.get("delivery_per_tick_probability")).doubleValue();
+        BigDecimal tickDurationFromConfig = (BigDecimal) json.get("tick_time_ms");
+        // min tick duration of 50ms to give stockers a chance to consume deliveries.
+        this.tick_duration_ms = tickDurationFromConfig == null
+            ? 100L
+            : Math.max(50L, tickDurationFromConfig.longValue());
+    }
+
+    private void InitDeliveryGenerator() {
+        this.simulationClock = new SimulationClock(this.tick_duration_ms);
+        this.deliveryGenerator = new DeliveryGenerator(
+            this.staging_area,
+            this.sections,
+            this.boxes_per_delivery,
+            this.delivery_per_tick_probability,
+            this.simulationClock
+        );
     }
 
     public static Warehouse fromConfigurationPath(String configuration_path) {

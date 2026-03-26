@@ -1,6 +1,8 @@
 package whorchestrator;
 
-import whorchestrator.StagingArea;
+import java.util.Map;
+
+//import whorchestrator.StagingArea;
 public class StagingArea {
     private boolean active;
     private int capacity;
@@ -25,5 +27,25 @@ public class StagingArea {
 
     public void deactivate() {
         active = false;
+    }
+
+    // Synchronized so concurrent delivery threads cannot race when updating capacity.
+    // Output uses key=value pairs for consistent log parsing.
+    public synchronized void addDelivery(Map<String, Integer> delivery, long tick, String threadId) {
+        int totalBoxes = 0;
+        StringBuilder details = new StringBuilder();
+        for (Map.Entry<String, Integer> entry : delivery.entrySet()) {
+            totalBoxes += entry.getValue();
+            details.append(" ").append(entry.getKey()).append("=").append(entry.getValue());
+        }
+        this.capacity += totalBoxes;
+        System.out.println(
+            "tick=" + tick
+            + " tid=" + threadId
+            + " event=delivery_arrived"
+            + " total_boxes=" + totalBoxes
+            + " staging_capacity=" + this.capacity
+            + details
+        );
     }
 }
