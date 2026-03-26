@@ -3,6 +3,9 @@ package whorchestrator;
 import whorchestrator.StagingArea;
 import whorchestrator.Section;
 import whorchestrator.SimulationClock;
+import whorchestrator.StockerSelectionStrategy;
+import whorchestrator.StockerRandomSelectionStrategy;
+
 import java.util.ArrayList;
 import java.util.List;
 import com.github.cliftonlabs.json_simple.JsonArray;
@@ -11,28 +14,13 @@ import com.github.cliftonlabs.json_simple.Jsoner;
 import java.io.FileNotFoundException;
 import com.github.cliftonlabs.json_simple.JsonException;
 import java.io.FileReader;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.math.BigDecimal;
-
-class Stocker extends Thread {
-
-    private static AtomicInteger next_id = new AtomicInteger(0);
-    private final int id;
-
-    public void run() {
-        System.out.println(String.format("Stocker ID: %d started.", id));
-    }
-
-    public Stocker() {
-        this.id = next_id.getAndIncrement();
-        System.out.println(String.format("Stocker ID: %d created.", id));
-    }
-}
 
 public class Warehouse {
 
     StagingArea staging_area;
     List<Section> sections;
+    List<String> section_names = new ArrayList<String>();
     List<Stocker> stockers;
     String name;
     int boxes_per_delivery;
@@ -40,6 +28,7 @@ public class Warehouse {
     long tick_duration_ms;
     SimulationClock simulationClock;
     DeliveryGenerator deliveryGenerator;
+    StockerSelectionStrategy selection_strategy;
 
     public void start() {
         simulationClock.start();
@@ -52,9 +41,10 @@ public class Warehouse {
 
     private Warehouse(String configuration_path) {
         System.out.println("Creating warehouse.");
-        sections = new ArrayList<Section>();
-        stockers = new ArrayList<Stocker>();
+        this.sections = new ArrayList<Section>();
+        this.stockers = new ArrayList<Stocker>();
         ProcessConfig(configuration_path);
+        this.selection_strategy = new StockerRandomSelectionStrategy();
         System.out.println(String.format("Warehouse: %s created.", this.name));
     }
 
@@ -83,19 +73,21 @@ public class Warehouse {
         JsonArray sections_arr = (JsonArray) json.get("sections");
         for (Object section : sections_arr) {
             JsonObject sec = (JsonObject) section;
+            String section_name = (String) sec.get("name");
             sections.add(
                 new Section(
-                    (String) sec.get("name"),
+                    section_name,
                     ((BigDecimal) sec.get("starting_capacity")).intValueExact()
                 )
             );
+            section_names.add(section_name);
         }
     }
 
     private void InitStockers(JsonObject json) {
         int no_stockers = ((BigDecimal) json.get("stockers")).intValueExact();
         for(int i = 0; i < no_stockers; i++) {
-            Stocker s = new Stocker();
+            Stocker s = new Stocker(this.staging_area, this.selection_strategy, this.section_names);
             stockers.add(s);
         };
     }

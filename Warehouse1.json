@@ -3,16 +3,33 @@
     "boxes_per_delivery": 10,
     "delivery_per_tick_probability": 0.01,
     "tick_per_day": 1000,
+    "ms_per_tick": 100,
     "stocker_box_capacity": 10,
+    "stocker_selection_strategy": "random_selection",
     "stockers": 3,
     "sections": [
+        {
+            "name": "electronics",
+            "capacity": 50,
+            "starting_capacity": 5
+        },
         {
             "name": "medicines",
             "capacity": 50,
             "starting_capacity": 5
         },
         {
-            "name": "electronics",
+            "name": "books",
+            "capacity": 50,
+            "starting_capacity": 5
+        },
+        {
+            "name": "clothes",
+            "capacity": 50,
+            "starting_capacity": 5
+        },
+        {
+            "name": "tools",
             "capacity": 50,
             "starting_capacity": 5
         }
