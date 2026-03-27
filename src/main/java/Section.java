@@ -4,18 +4,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Section {
     public final String name;
-    private int capacity;
     private int current_boxes;
     private final int max_capacity;
     
     // Lock for synchronizing access between pickers and stockers
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    Section(String name, int starting_capacity) {
+    Section(String name, int starting_capacity, int max_capacity) {
         this.name = name;
-        this.current_boxes = starting_capacity;
-        this.max_capacity = 50; // Default max capacity, could be changed
-        this.capacity = starting_capacity;
+        this.max_capacity = max_capacity;
+        this.current_boxes = Math.min(starting_capacity, max_capacity);
         System.out.println(String.format("Section: %s created with %d boxes.", name, starting_capacity));
     }
 

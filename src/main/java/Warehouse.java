@@ -87,10 +87,13 @@ public class Warehouse {
         for (Object section : sections_arr) {
             JsonObject sec = (JsonObject) section;
             String section_name = (String) sec.get("name");
+            int startingCapacity = ((BigDecimal) sec.get("starting_capacity")).intValueExact();
+            int sectionCapacity = ((BigDecimal) sec.get("capacity")).intValueExact();
             sections.add(
                 new Section(
                     section_name,
-                    ((BigDecimal) sec.get("starting_capacity")).intValueExact()
+                    startingCapacity,
+                    sectionCapacity
                 )
             );
             section_names.add(section_name);
