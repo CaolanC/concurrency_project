@@ -34,17 +34,17 @@ public class Warehouse {
         simulationClock.start();
         deliveryGenerator.start();
         for (Stocker stocker : stockers) {
-//             stocker.start(); // Not starting this yet as we need to clean up the threads when they die.
+            stocker.start(); // Not starting this yet as we need to clean up the threads when they die.
         } // So either the CLI might have some delay, or this can continue running and warehouse started can print BEFORE the last stocker prints its start line. So might need to take a look at this later.
         System.out.println(String.format("Warehouse %s started.", this.name));
     }
 
-    private Warehouse(String configuration_path) {
+    private Warehouse(String configuration_path, SimulationClock simulationClock) {
+        this.simulationClock = simulationClock;
         System.out.println("Creating warehouse.");
         this.sections = new ArrayList<Section>();
         this.stockers = new ArrayList<Stocker>();
         ProcessConfig(configuration_path);
-        this.selection_strategy = new StockerRandomSelectionStrategy();
         System.out.println(String.format("Warehouse: %s created.", this.name));
     }
 
@@ -56,6 +56,7 @@ public class Warehouse {
             InitSections(json);
             InitStagingArea(json);
             InitDeliveryConfig(json);
+            this.selection_strategy = new StockerRandomSelectionStrategy(this.section_names, 10);
             InitStockers(json);
             InitDeliveryGenerator();
 
@@ -87,7 +88,7 @@ public class Warehouse {
     private void InitStockers(JsonObject json) {
         int no_stockers = ((BigDecimal) json.get("stockers")).intValueExact();
         for(int i = 0; i < no_stockers; i++) {
-            Stocker s = new Stocker(this.staging_area, this.selection_strategy, this.section_names);
+            Stocker s = new Stocker(this.staging_area, this.selection_strategy, this.section_names, this.simulationClock);
             stockers.add(s);
         };
     }
@@ -103,7 +104,7 @@ public class Warehouse {
     }
 
     private void InitDeliveryGenerator() {
-        this.simulationClock = new SimulationClock(this.tick_duration_ms);
+//         this.simulationClock = new SimulationClock(this.tick_duration_ms);
         this.deliveryGenerator = new DeliveryGenerator(
             this.staging_area,
             this.sections,
@@ -113,7 +114,7 @@ public class Warehouse {
         );
     }
 
-    public static Warehouse fromConfigurationPath(String configuration_path) {
-        return new Warehouse(configuration_path);
+    public static Warehouse fromConfigurationPath(String configuration_path, SimulationClock simulationClock) {
+        return new Warehouse(configuration_path, simulationClock);
     }
 }
