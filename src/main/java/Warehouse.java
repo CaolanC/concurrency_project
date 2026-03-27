@@ -63,10 +63,10 @@ public class Warehouse {
             JsonObject json = (JsonObject) Jsoner.deserialize(reader);
             this.name = (String) json.get("name");
 
-            InitStagingArea(json);
             InitSections(json);
             InitStagingArea(json);
             InitDeliveryConfig(json);
+
             this.stocker_selection_strategy = new StockerRandomSelectionStrategy(this.section_names, 10);
             InitStockers(json);
             InitDeliveryGenerator();
@@ -100,6 +100,7 @@ public class Warehouse {
     private void InitStockers(JsonObject json) {
         int no_stockers = ((BigDecimal) json.get("stockers")).intValueExact();
         for(int i = 0; i < no_stockers; i++) {
+
             Stocker stocker = new Stocker(this.staging_area, this.stocker_selection_strategy, this.section_names, this.simulationClock);
             stockers.add(stocker);
         };
@@ -134,7 +135,7 @@ public class Warehouse {
     }
 
     private void InitDeliveryGenerator() {
-        this.simulationClock = new SimulationClock(this.tick_duration_ms);
+//         this.simulationClock = new SimulationClock(this.tick_duration_ms);
         this.deliveryGenerator = new DeliveryGenerator(
             this.staging_area,
             this.sections,
