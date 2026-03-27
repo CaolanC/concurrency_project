@@ -3,6 +3,8 @@ package whorchestrator;
 import java.util.concurrent.atomic.AtomicInteger;
 import whorchestrator.StockerSelectionStrategy;
 import whorchestrator.StagingArea;
+import whorchestrator.Section;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +16,8 @@ class Stocker extends Thread {
     private final SimulationClock simulation_clock;
     private Map<String, Integer> carrying = new HashMap<String, Integer>();
     private StagingArea staging_area;
-    private List<String> section_names;
+    private List<String> section_names = new ArrayList<String>();
+    private List<Section> sections;
     private static AtomicInteger next_id = new AtomicInteger(0);
     private StockerSelectionStrategy selection_strategy; // This could potentially be static, but I'm not sure if potentially the optimal strategy COULD include multiple stockers running different strategies.
                                                          // I doubt it, but it could be an interesting thing to try out.
@@ -36,12 +39,15 @@ class Stocker extends Thread {
         }
     }
 
-    public Stocker(StagingArea staging_area, StockerSelectionStrategy selection_strategy, List<String> section_names, SimulationClock simulation_clock) {
+    public Stocker(StagingArea staging_area, StockerSelectionStrategy selection_strategy, List<Section> sections, SimulationClock simulation_clock) {
         this.id = next_id.getAndIncrement();
         this.simulation_clock = simulation_clock;
         this.selection_strategy = selection_strategy;
         this.staging_area = staging_area;
-        this.section_names = section_names;
+        this.sections = sections;
+        for(Section s : sections) {
+            this.section_names.add(s.name);
+        }
         for(String name : section_names) {
             carrying.put(name, 0);
         }
@@ -75,7 +81,9 @@ class Stocker extends Thread {
 
         for (String sectionName : visitOrder) {
             int loadForSection = carrying.getOrDefault(sectionName, 0);
-            if (loadForSection <= 0) continue;
+            if (loadForSection <= 0) {
+                continue;
+            }
 
             int remainingLoad = totalCarrying();
             int moveTicks = 10 + remainingLoad;
@@ -91,18 +99,39 @@ class Stocker extends Thread {
                 + " load=" + remainingLoad
             );
 
-            simulation_clock.sleepTicks(loadForSection);
+            Section section = findSectionByName(sectionName);
 
-            System.out.println(
-                "tick=" + simulation_clock.getCurrentTick()
-                + " tid=S" + id
-                + " event=stock_end"
-                + " section=" + sectionName
-                + " stocked=" + loadForSection
-                + " remaining_load=" + (totalCarrying() - loadForSection)
-            );
+            int stocked = 0;
+            section.lockForStocking();
+            try {
+                System.out.println(
+                    "tick=" + simulation_clock.getCurrentTick()
+                    + " tid=S" + id
+                    + " event=stock_begin"
+                    + " section=" + sectionName
+                    + " amount=" + loadForSection
+                );
 
-            carrying.put(sectionName, 0);
+                stocked = section.addBoxes(loadForSection);
+
+                if (stocked > 0) {
+                    simulation_clock.sleepTicks(stocked);
+                }
+
+                carrying.put(sectionName, loadForSection - stocked);
+
+                System.out.println(
+                    "tick=" + simulation_clock.getCurrentTick()
+                    + " tid=S" + id
+                    + " event=stock_end"
+                    + " section=" + sectionName
+                    + " stocked=" + stocked
+                    + " remaining_load=" + totalCarrying()
+                );
+            } finally {
+                section.unlockForStocking();
+            }
+
             currentLocation = sectionName;
         }
 
@@ -129,5 +158,14 @@ class Stocker extends Thread {
             carrying.getOrDefault(a, 0)
         ));
         return ordered;
+    }
+
+    private Section findSectionByName(String name) {
+        for (Section section : sections) {
+            if (section.name.equals(name)) {
+                return section;
+            }
+        }
+        throw new IllegalArgumentException("Section not found: " + name);
     }
 }
