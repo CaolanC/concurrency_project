@@ -127,7 +127,10 @@ public class Warehouse {
     private void InitDeliveryConfig(JsonObject json) {
         this.boxes_per_delivery = ((BigDecimal) json.get("boxes_per_delivery")).intValueExact();
         this.delivery_per_tick_probability = ((BigDecimal) json.get("delivery_per_tick_probability")).doubleValue();
-        BigDecimal tickDurationFromConfig = (BigDecimal) json.get("tick_time_ms");
+        BigDecimal tickDurationFromConfig = (BigDecimal) json.get("ms_per_tick");
+        if (tickDurationFromConfig == null) {
+            tickDurationFromConfig = (BigDecimal) json.get("tick_time_ms");
+        }
         // min tick duration of 50ms to give stockers a chance to consume deliveries.
         this.tick_duration_ms = tickDurationFromConfig == null
             ? 100L
@@ -147,5 +150,25 @@ public class Warehouse {
 
     public static Warehouse fromConfigurationPath(String configuration_path, SimulationClock simulationClock) {
         return new Warehouse(configuration_path, simulationClock);
+    }
+
+    // get tick duration from config without needing to initialize the whole warehouse, 
+    // so that it can be used in the orchestrator to create the simulation clock with the right tick duration.
+    public static long getTickDurationMsFromConfigurationPath(String configuration_path) {
+        try (FileReader reader = new FileReader(configuration_path)) {
+            JsonObject json = (JsonObject) Jsoner.deserialize(reader);
+            BigDecimal tickDurationFromConfig = (BigDecimal) json.get("ms_per_tick");
+            if (tickDurationFromConfig == null) {
+                tickDurationFromConfig = (BigDecimal) json.get("tick_time_ms");
+            }
+
+            return tickDurationFromConfig == null
+                ? 100L
+                : Math.max(50L, tickDurationFromConfig.longValue());
+        } catch (FileNotFoundException | JsonException exception) {
+            throw new RuntimeException("Failed to read tick duration from config", exception);
+        } catch (Exception exception) {
+            throw new RuntimeException("Failed to load config", exception);
+        }
     }
 }
