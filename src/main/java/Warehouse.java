@@ -52,10 +52,9 @@ public class Warehouse {
         this.sections = new ArrayList<Section>();
         this.stockers = new ArrayList<Stocker>();
         this.pickers = new ArrayList<Picker>();
-        this.stocker_selection_strategy = new StockerRandomSelectionStrategy();
+        this.stocker_selection_strategy = new StockerRandomSelectionStrategy(this.section_names, 10);
         this.picker_selection_strategy = new PickerRandomSelectionStrategy();
         ProcessConfig(configuration_path);
-        this.selection_strategy = new StockerRandomSelectionStrategy();
         System.out.println(String.format("Warehouse: %s created.", this.name));
     }
 
@@ -68,7 +67,7 @@ public class Warehouse {
             InitSections(json);
             InitStagingArea(json);
             InitDeliveryConfig(json);
-            this.selection_strategy = new StockerRandomSelectionStrategy(this.section_names, 10);
+            this.stocker_selection_strategy = new StockerRandomSelectionStrategy(this.section_names, 10);
             InitStockers(json);
             InitDeliveryGenerator();
             InitPickers(json);
@@ -101,7 +100,7 @@ public class Warehouse {
     private void InitStockers(JsonObject json) {
         int no_stockers = ((BigDecimal) json.get("stockers")).intValueExact();
         for(int i = 0; i < no_stockers; i++) {
-            Stocker stocker = new Stocker(this.staging_area, this.stocker_selection_strategy, this.section_names);
+            Stocker stocker = new Stocker(this.staging_area, this.stocker_selection_strategy, this.section_names, this.simulationClock);
             stockers.add(stocker);
         };
     }
@@ -145,7 +144,7 @@ public class Warehouse {
         );
     }
 
-    public static Warehouse fromConfigurationPath(String configuration_path) {
-        return new Warehouse(configuration_path);
+    public static Warehouse fromConfigurationPath(String configuration_path, SimulationClock simulationClock) {
+        return new Warehouse(configuration_path, simulationClock);
     }
 }
