@@ -27,10 +27,22 @@ class Stocker extends Thread {
         System.out.println(String.format("Stocker ID: %d started.", id));
         try {
             while (!Thread.currentThread().isInterrupted()) {
-                Map<String, Integer> load = this.selection_strategy.TakeFromStagingArea(this.staging_area);
-                setCarrying(load);
+                if (totalCarrying() == 0) {
+                    Map<String, Integer> load = this.selection_strategy.TakeFromStagingArea(this.staging_area);
+                    setCarrying(load);
+
+                    // Strategy found nothing useful to take right now.
+                    if (totalCarrying() == 0) {
+                        simulation_clock.sleepTicks(1);
+                        continue;
+                    }
+                }
+
                 processLoad();
-                clearCarrying();
+
+                if (totalCarrying() > 0) {
+                    simulation_clock.sleepTicks(1);
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -74,10 +86,12 @@ class Stocker extends Thread {
         return total;
     }
 
-    private void processLoad() throws InterruptedException {
-        List<String> visitOrder = getSectionsByDescendingLoad();
+private void processLoad() throws InterruptedException {
+    String currentLocation = "staging";
 
-        String currentLocation = "staging";
+    while (totalCarrying() > 0) {
+        List<String> visitOrder = getSectionsByDescendingLoad();
+        boolean madeProgressThisPass = false;
 
         for (String sectionName : visitOrder) {
             int loadForSection = carrying.getOrDefault(sectionName, 0);
@@ -85,9 +99,15 @@ class Stocker extends Thread {
                 continue;
             }
 
-            int remainingLoad = totalCarrying();
-            int moveTicks = 10 + remainingLoad;
+            int remainingLoadBeforeMove = totalCarrying();
 
+            // If coming from staging, use load for THIS section
+            int moveTicks;
+            if (currentLocation.equals("staging")) {
+                moveTicks = 10 + loadForSection;
+            } else {
+                moveTicks = 10 + remainingLoadBeforeMove;
+            }
             simulation_clock.sleepTicks(moveTicks);
 
             System.out.println(
@@ -96,7 +116,7 @@ class Stocker extends Thread {
                 + " event=move"
                 + " from=" + currentLocation
                 + " to=" + sectionName
-                + " load=" + remainingLoad
+                + " load=" + remainingLoadBeforeMove
             );
 
             Section section = findSectionByName(sectionName);
@@ -116,6 +136,7 @@ class Stocker extends Thread {
 
                 if (stocked > 0) {
                     simulation_clock.sleepTicks(stocked);
+                    madeProgressThisPass = true;
                 }
 
                 carrying.put(sectionName, loadForSection - stocked);
@@ -129,26 +150,32 @@ class Stocker extends Thread {
                     + " remaining_load=" + totalCarrying()
                 );
             } finally {
+
                 section.unlockForStocking();
             }
 
             currentLocation = sectionName;
         }
 
-        if (!currentLocation.equals("staging")) {
-            int remainingLoad = totalCarrying();
-            simulation_clock.sleepTicks(10 + remainingLoad);
-
-            System.out.println(
-                "tick=" + simulation_clock.getCurrentTick()
-                + " tid=S" + id
-                + " event=move"
-                + " from=" + currentLocation
-                + " to=staging"
-                + " load=" + remainingLoad
-            );
+        if (!madeProgressThisPass) {
+            break;
         }
     }
+
+    if (!currentLocation.equals("staging")) {
+        int remainingLoad = totalCarrying();
+        simulation_clock.sleepTicks(10 + remainingLoad);
+
+        System.out.println(
+            "tick=" + simulation_clock.getCurrentTick()
+            + " tid=S" + id
+            + " event=move"
+            + " from=" + currentLocation
+            + " to=staging"
+            + " load=" + remainingLoad
+        );
+    }
+}
 
     private List<String> getSectionsByDescendingLoad() {
         List<String> ordered = new ArrayList<>(section_names);
