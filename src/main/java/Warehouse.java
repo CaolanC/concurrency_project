@@ -5,6 +5,8 @@ import whorchestrator.Section;
 import whorchestrator.SimulationClock;
 import whorchestrator.StockerSelectionStrategy;
 import whorchestrator.StockerRandomSelectionStrategy;
+import whorchestrator.PickerSelectionStrategy;
+import whorchestrator.PickerRandomSelectionStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,13 +24,15 @@ public class Warehouse {
     List<Section> sections;
     List<String> section_names = new ArrayList<String>();
     List<Stocker> stockers;
+    List<Picker> pickers;
     String name;
     int boxes_per_delivery;
     double delivery_per_tick_probability;
     long tick_duration_ms;
     SimulationClock simulationClock;
     DeliveryGenerator deliveryGenerator;
-    StockerSelectionStrategy selection_strategy;
+    StockerSelectionStrategy stocker_selection_strategy;
+    PickerSelectionStrategy picker_selection_strategy;
 
     public void start() {
         simulationClock.start();
@@ -36,6 +40,9 @@ public class Warehouse {
         for (Stocker stocker : stockers) {
             stocker.start(); // Not starting this yet as we need to clean up the threads when they die.
         } // So either the CLI might have some delay, or this can continue running and warehouse started can print BEFORE the last stocker prints its start line. So might need to take a look at this later.
+        for (Picker picker : pickers) {
+            picker.start();
+        }
         System.out.println(String.format("Warehouse %s started.", this.name));
     }
 
@@ -44,6 +51,9 @@ public class Warehouse {
         System.out.println("Creating warehouse.");
         this.sections = new ArrayList<Section>();
         this.stockers = new ArrayList<Stocker>();
+        this.pickers = new ArrayList<Picker>();
+        this.stocker_selection_strategy = new StockerRandomSelectionStrategy(this.section_names, 10);
+        this.picker_selection_strategy = new PickerRandomSelectionStrategy();
         ProcessConfig(configuration_path);
         System.out.println(String.format("Warehouse: %s created.", this.name));
     }
@@ -56,9 +66,11 @@ public class Warehouse {
             InitSections(json);
             InitStagingArea(json);
             InitDeliveryConfig(json);
-            this.selection_strategy = new StockerRandomSelectionStrategy(this.section_names, 10);
+
+            this.stocker_selection_strategy = new StockerRandomSelectionStrategy(this.section_names, 10);
             InitStockers(json);
             InitDeliveryGenerator();
+            InitPickers(json);
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to load config", e);
@@ -88,9 +100,28 @@ public class Warehouse {
     private void InitStockers(JsonObject json) {
         int no_stockers = ((BigDecimal) json.get("stockers")).intValueExact();
         for(int i = 0; i < no_stockers; i++) {
-            Stocker s = new Stocker(this.staging_area, this.selection_strategy, this.section_names, this.simulationClock);
-            stockers.add(s);
+
+            Stocker stocker = new Stocker(this.staging_area, this.stocker_selection_strategy, this.section_names, this.simulationClock);
+            stockers.add(stocker);
         };
+    }
+
+    private void InitPickers(JsonObject json) {
+        Object pickersObj = json.get("pickers");
+        int no_pickers = pickersObj != null
+            ? ((BigDecimal) pickersObj).intValueExact()
+            : 5; // Default to 5 pickers if not specified in config
+
+        for(int i = 0; i < no_pickers; i++) {
+            Picker picker = new Picker(
+                this.sections,
+                this.section_names,
+                this.picker_selection_strategy,
+                this.simulationClock,
+                no_pickers
+            );
+            pickers.add(picker);
+        }
     }
 
     private void InitDeliveryConfig(JsonObject json) {
