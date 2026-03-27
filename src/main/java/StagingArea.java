@@ -85,6 +85,7 @@ public synchronized Map<String, Integer> TakeBoxes(int no_boxes) throws Interrup
             + " total_boxes=" + totalBoxes
             + " staging_capacity=" + this.current_boxes
             + details
+            + stock
         );
 
         notifyAll();
